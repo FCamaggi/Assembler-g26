@@ -1,0 +1,6 @@
+CODE:
+MOV A,5
+MOV (0),A
+MOV B,(0)
+CMP A,B
+JEQ 2

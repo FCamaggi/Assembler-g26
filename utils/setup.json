@@ -1,0 +1,144 @@
+{
+  "config": {
+    "tamañoPalabra": 36,
+    "instrucciones": {
+      "bits": 6,
+      "max": 63
+    },
+    "tipos": {
+      "bits": 6,
+      "max": 63
+    },
+
+    "literals": {
+      "bits": 24,
+      "max": 4095
+    }
+  },
+  "instrucciones": {
+    "MOV": {
+      "opcode": "000001",
+      "formato": [
+        "REG, REG",
+        "REG, Lit",
+        "REG, (Dir)",
+        "(Dir), REG",
+        "REG, (REG)",
+        "(REG), REG",
+        "(REG), Lit"
+      ]
+    },
+    "ADD": {
+      "opcode": "000010",
+      "formato": ["REG, REG", "REG, Lit", "REG, (Dir)", "(Dir)", "REG, (REG)"]
+    },
+    "SUB": {
+      "opcode": "000011",
+      "formato": ["REG, REG", "REG, Lit", "REG, (Dir)", "(Dir)", "REG, (REG)"]
+    },
+    "AND": {
+      "opcode": "000111",
+      "formato": ["REG, REG", "REG, Lit", "REG, (Dir)", "(Dir)", "REG, (REG)"]
+    },
+    "OR": {
+      "opcode": "001000",
+      "formato": ["REG, REG", "REG, Lit", "REG, (Dir)", "(Dir)", "REG, (REG)"]
+    },
+    "XOR": {
+      "opcode": "001001",
+      "formato": ["REG, REG", "REG, Lit", "REG, (Dir)", "(Dir)", "REG, (REG)"]
+    },
+    "NOT": {
+      "opcode": "001010",
+      "formato": ["REG", "REG, REG", "(Dir), REG", "(REG), REG"]
+    },
+    "SHL": {
+      "opcode": "001011",
+      "formato": ["REG", "REG, REG", "(Dir), REG", "(REG), REG"]
+    },
+    "SHR": {
+      "opcode": "001100",
+      "formato": ["REG", "REG, REG", "(Dir), REG", "(REG), REG"]
+    },
+    "INC": {
+      "opcode": "001101",
+      "formato": ["REG", "(Dir)", "(REG)"]
+    },
+    "DEC": {
+      "opcode": "001110",
+      "formato": ["REG"]
+    },
+    "CMP": {
+      "opcode": "001111",
+      "formato": ["REG, REG", "REG, Lit", "REG, (Dir)", "REG, (REG)"]
+    },
+    "JMP": {
+      "opcode": "010000",
+      "formato": ["Ins"]
+    },
+    "JEQ": {
+      "opcode": "010001",
+      "formato": ["Ins"]
+    },
+    "JNE": {
+      "opcode": "010010",
+      "formato": ["Ins"]
+    },
+    "JGT": {
+      "opcode": "010011",
+      "formato": ["Ins"]
+    },
+    "JGE": {
+      "opcode": "010100",
+      "formato": ["Ins"]
+    },
+    "JLT": {
+      "opcode": "010101",
+      "formato": ["Ins"]
+    },
+    "JLE": {
+      "opcode": "010110",
+      "formato": ["Ins"]
+    },
+    "JCR": {
+      "opcode": "010111",
+      "formato": ["Ins"]
+    },
+    "NOP": {
+      "opcode": "000000",
+      "formato": []
+    },
+    "PUSH": {
+      "opcode": "011000",
+      "formato": ["REG"]
+    },
+    "POP1": {
+      "opcode": "011001",
+      "formato": ["REG"]
+    },
+    "POP2": {
+      "opcode": "011010",
+      "formato": ["REG"]
+    },
+    "CALL": {
+      "opcode": "011011",
+      "formato": ["Ins"]
+    },
+    "RET1": {
+      "opcode": "011100",
+      "formato": []
+    },
+    "RET2": {
+      "opcode": "011101",
+      "formato": []
+    }
+  },
+  "tipos": {
+    "A": "001",
+    "B": "010",
+    "(dir)": "011",
+    "lit": "100",
+    "(A)": "101",
+    "(B)": "110"
+  }
+}
