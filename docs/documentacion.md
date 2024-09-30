@@ -10,6 +10,7 @@ Este proyecto implementa un assembler para el curso IIC2343 - Arquitectura de Co
 - Manejo de arrays y strings en la sección de datos
 - Interfaz de línea de comandos flexible
 - Capacidad de programar directamente la ROM de Basys3
+- Opción para cargar datos iniciales como instrucciones
 
 ## Requisitos
 
@@ -39,42 +40,109 @@ Esto ensamblará el código en `codigo_fuente.txt` y generará el archivo de sal
 ### Opciones adicionales
 
 - `-o`, `--output`: Especifica un archivo de salida diferente
-
-```bash
-  python main.py codigo_fuente.txt -o salida.bin
-```
-
 - `-s`, `--setup`: Usa un archivo de configuración personalizado
-
-```bash
-  python main.py codigo_fuente.txt -s mi_config.json
-```
-
 - `-v`, `--verbose`: Muestra información detallada durante el proceso
-
-```bash
-  python main.py codigo_fuente.txt -v
-```
-
 - `--debug`: Activa el modo de depuración
-
-```bash
-  python main.py codigo_fuente.txt --debug
-```
-
 - `--program-basys`: Programa la ROM de la Basys3 después del ensamblaje
-
-```bash
-  python main.py codigo_fuente.txt --program-basys
-```
-
 - `--port`: Especifica el puerto serial para la Basys3
+- `--load-data`: Carga los datos iniciales como instrucciones
 
-```bash
-  python main.py codigo_fuente.txt --program-basys --port COM3
+## Problema: Verificador de Palíndromo Binario
+
+El siguiente código verifica si un número de 16 bits es un palíndromo en binario. Un palíndromo es un número que se lee igual de izquierda a derecha que de derecha a izquierda.
+
+### Codigo Fuente
+
+```assembly
+DATA:
+num 384  // Número a verificar
+res 0    // Resultado: 0 = No es palíndromo, 1 = Sí es palíndromo
+temp 0   // Variable temporal para operaciones
+count 16 // Contador para 16 bits
+one 1    // Constante 1 para operaciones bit a bit
+
+CODE:
+// Inicialización
+MOV A,(num)  // Carga el número en A
+MOV B,0      // B se usará como el número invertido
+
+// Invertir el número
+loop:
+    MOV (temp),A  // Guarda A en temp
+    MOV A,(one)   // Carga 1 en A
+    AND A,(temp)  // Aislar el bit menos significativo
+    MOV (temp),A  // Guarda el resultado en temp
+    SHL B         // Desplaza B a la izquierda
+    ADD B,(temp)  // Añade el bit menos significativo a B
+    MOV A,(temp)  // Recupera el valor original de A
+    SHR A         // Desplaza A a la derecha
+
+    MOV A,(count)
+    DEC A
+    MOV (count),A
+    CMP A,0
+    JNE loop      // Continúa si el contador no es cero
+
+// Comparar el número original con su inverso
+MOV A,(num)
+CMP A,B
+JEQ is_palindrome
+
+// No es palíndromo
+MOV A,0
+MOV (res),A
+JMP end
+
+// Es palíndromo
+is_palindrome:
+MOV A,1
+MOV (res),A
+
+// Fin del programa
+end:
+MOV A,(res)
+MOV B,(res)
 ```
 
-## Estructura del código fuente
+### Explicación del Código
+
+1. **Inicialización**: Se carga el número a verificar en el registro A y se inicializa B a 0.
+2. **Inversión del número**: Se utiliza un bucle para invertir el número bit a bit.
+   - Se aísla el bit menos significativo de A.
+   - Se desplaza B a la izquierda y se añade el bit aislado.
+   - Se desplaza A a la derecha.
+   - Se repite 16 veces (para un número de 16 bits).
+3. **Comparación**: Se compara el número original (A) con su inverso (B).
+4. **Resultado**: Se almacena 1 en `res` si es palíndromo, 0 si no lo es.
+
+### Cómo Ejecutar
+
+Para ensamblar y ejecutar este programa:
+
+1. Guarda el código en un archivo (por ejemplo, `palindromo.txt`).
+2. Ejecuta el assembler:
+
+   ```bash
+   python main.py palindromo.txt -v
+   ```
+
+   O si quieres cargar los datos como instrucciones:
+
+   ```bash
+   python main.py palindromo.txt -v --load-data
+   ```
+
+3. El assembler generará el código de máquina en `output.txt`.
+4. Si usas `--program-basys`, el código se cargará directamente en la placa Basys3.
+
+### Interpretación del Resultado
+
+- Si `res` es 1, el número es un palíndromo binario.
+- Si `res` es 0, el número no es un palíndromo binario.
+
+En este ejemplo, 384 (110000000 en binario) no es un palíndromo binario, por lo que `res` será 0.
+
+## Estructura del Código Binario
 
 El código fuente debe seguir esta estructura:
 
@@ -112,7 +180,7 @@ JMP LABEL
 - PUSH, POP
 - CALL, RET
 
-## Estructura del Código Binario
+## Estructura de la palabra de instrucción
 
 El assembler genera código binario de 36 bits para cada instrucción, siguiendo esta estructura:
 
@@ -136,7 +204,7 @@ El assembler genera código binario de 36 bits para cada instrucción, siguiendo
 - `101`: Indirección a través del registro A
 - `110`: Indirección a través del registro B
 
-### Ejemplos
+### Ejemplo
 
 1. `MOV A, 42`
 
@@ -146,36 +214,6 @@ Param 1: 001 (Registro A)
 Param 2: 100 (Valor literal)
 Literal: 000000000000000000101010 (42 en binario)
 Resultado: 000001001100000000000000000000101010
-```
-
-1. `ADD B, (1234)`
-
-```example
-Opcode: 000010 (ADD)
-Param 1: 010 (Registro B)
-Param 2: 011 (Dirección de memoria)
-Dirección: 000000000000010011010010 (1234 en binario)
-Resultado: 000010010011000000000000010011010010
-```
-
-1. `JMP LABEL` (asumiendo que LABEL está en la dirección 50)
-
-```example
-Opcode: 010000 (JMP)
-Param 1: 000 (No usado)
-Param 2: 000 (No usado)
-Dirección: 000000000000000000110010 (50 en binario)
-Resultado: 010000000000000000000000000000110010
-```
-
-1. `MOV (A), B`
-
-```example
-Opcode: 000001 (MOV)
-Param 1: 101 (Indirección a través de A)
-Param 2: 010 (Registro B)
-Literal: 000000000000000000000000 (No usado)
-Resultado: 000001101010000000000000000000000000
 ```
 
 Nota: La estructura exacta puede variar según la configuración en el archivo `setup.json`.

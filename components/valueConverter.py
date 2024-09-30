@@ -33,52 +33,46 @@ class ValueConverter:
 
     @staticmethod
     def param_to_binary(param: str, types: Dict, types_params: Dict) -> str:
-        param_type = ValueConverter.get_type(param, types)
-        if param_type == 'reg':
+        if param in types:
             return types[param]
-        elif param_type == 'dir':
-            return ValueConverter.process_dir(param, types)
-        elif param_type == 'lit':
-            return types[param_type]
-        return "".zfill(int(types_params['bits']/2))
+        elif param.startswith('(') and param.endswith(')'):
+            return types['(dir)']
+        else:
+            return types['lit']
 
     @staticmethod
     def process_dir(param: str, types: Dict) -> str:
         if param[1] in types:
             return types[param]
         return types['(dir)']
-
+    
     @staticmethod
-    def literal_or_direct_value(param: str, types: Dict, lit_params: Dict, labels: Dict, data: Dict, memory: Dict) -> str:
+    def literal_or_direct_value(param: str, types: Dict, lit_params: Dict, labels: Dict, data: Dict, memory, instruction_address: int) -> str:
         param_type = ValueConverter.get_type(param, types)
-        max_value = 2**lit_params['bits'] - 1  # 4095 para un literal de 12 bits
+        max_value = 2**lit_params['bits'] - 1
 
         if param_type == 'dir':
             dir_value = param[1:-1]
             
-            # Si es un número, tratarlo como una dirección literal
             if ValueConverter.is_numeric(dir_value):
                 address = ValueConverter.parse_numeric(dir_value)
-            elif '+' in dir_value:  # Manejo de arrays e índices
-                array_name, index = dir_value.split('+')
-                if array_name not in data:
-                    raise InvalidOperandError(f"Array no definido: {array_name}")
-                base_address, size = data[array_name]
-                index = ValueConverter.parse_numeric(index)
-                if index >= size:
-                    raise InvalidOperandError(f"Índice fuera de rango para {array_name}: {index}")
-                address = base_address + index
+            elif dir_value in data:
+                address = data[dir_value]
             else:
-                if dir_value not in data:
-                    raise InvalidOperandError(f"Variable no definida: {dir_value}")
-                address = data[dir_value] if isinstance(data[dir_value], int) else data[dir_value][0]
+                raise InvalidOperandError(f"Variable no definida: {dir_value}")
 
             if address > max_value:
                 raise InvalidOperandError(f"Dirección fuera de rango: {address}. El máximo permitido es {max_value}")
             return format(address, f'0{lit_params["bits"]}b')
         
         elif param_type == 'lit':
-            value = ValueConverter.parse_numeric(param)
+            if param in data:
+                value = memory.get_value(param)
+            elif param in labels:
+                value = labels[param]
+            else:
+                value = ValueConverter.parse_numeric(param)
+            
             if value > max_value:
                 raise InvalidOperandError(f"Literal fuera de rango: {value}. El máximo permitido es {max_value}")
             return format(value, f'0{lit_params["bits"]}b')

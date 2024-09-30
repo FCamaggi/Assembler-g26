@@ -1,6 +1,9 @@
+DATA:
+d 6
+
 CODE:
 MOV A,5
 MOV (0),A
-MOV B,(0)
+MOV B,(d)
 CMP A,B
 JEQ 2

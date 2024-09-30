@@ -3,6 +3,7 @@ import json
 import sys
 from components.assembler import Assembler
 from utils.exceptions import AssemblerError
+from utils.logger import log
 from iic2343 import Basys3
 
 def parse_arguments():
@@ -14,6 +15,7 @@ def parse_arguments():
     parser.add_argument('--debug', action='store_true', help='Activar modo de depuración')
     parser.add_argument('--program-basys', action='store_true', help='Programar la ROM de la Basys3 después del ensamblaje')
     parser.add_argument('--port', default=None, help='Puerto serial para la conexión con Basys3')
+    parser.add_argument('--load-data', action='store_true', help='Cargar datos iniciales como instrucciones')
     return parser.parse_args()
 
 def program_basys(binary, port=None, verbose=False):
@@ -44,7 +46,7 @@ def main():
         print(f"Error: El archivo de configuración '{args.setup}' no es un JSON válido")
         sys.exit(1)
 
-    assembler = Assembler(setup, verbose=args.verbose)
+    assembler = Assembler(setup, verbose=args.verbose, load_data=args.load_data)
 
     try:
         with open(args.input, 'r') as f:

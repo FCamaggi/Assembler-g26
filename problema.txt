@@ -1,0 +1,48 @@
+DATA:
+num 384  // Número a verificar
+res 0    // Resultado: 0 = No es palíndromo, 1 = Sí es palíndromo
+temp 0   // Variable temporal para operaciones
+count 16 // Contador para 16 bits
+one 1    // Constante 1 para operaciones bit a bit
+
+CODE:
+// Inicialización
+MOV A,(num)  // Carga el número en A
+MOV B,0      // B se usará como el número invertido
+
+// Invertir el número
+loop:
+    MOV (temp),A  // Guarda A en temp
+    MOV A,(one)   // Carga 1 en A
+    AND A,(temp)  // Aislar el bit menos significativo
+    MOV (temp),A  // Guarda el resultado en temp
+    SHL B         // Desplaza B a la izquierda
+    ADD B,(temp)  // Añade el bit menos significativo a B
+    MOV A,(temp)  // Recupera el valor original de A
+    SHR A         // Desplaza A a la derecha
+    
+    MOV A,(count)
+    DEC A
+    MOV (count),A
+    CMP A,0
+    JNE loop      // Continúa si el contador no es cero
+
+// Comparar el número original con su inverso
+MOV A,(num)
+CMP A,B
+JEQ is_palindrome
+
+// No es palíndromo
+MOV A,0
+MOV (res),A
+JMP end
+
+// Es palíndromo
+is_palindrome:
+MOV A,1
+MOV (res),A
+
+// Fin del programa
+end:
+MOV A,(res)
+MOV B,(res)

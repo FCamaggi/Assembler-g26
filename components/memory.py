@@ -11,10 +11,11 @@ class Memory:
     def store_value(self, name: str, value: Union[str, List[str]]) -> None:
         if isinstance(value, list):  # Es un array
             self._store_array(name, value)
-        elif value.startswith("'") and value.endswith("'"):
-            self._store_char(name, value)
-        elif value.startswith('"') and value.endswith('"'):
-            self._store_string(name, value)
+        elif (value.startswith("'") and value.endswith("'")) or (value.startswith('"') and value.endswith('"')):
+            if len(value) > 3:
+                self._store_string(name, value)
+            else:
+                self._store_char(name, value)
         else:
             self._store_number(name, value)
 
@@ -44,10 +45,11 @@ class Memory:
         self.next_data_address += 1
 
     def _store_number(self, name: str, value: str) -> None:
-        self.memory[self.next_data_address] = ValueConverter.parse_numeric(value)
+        parsed_value = ValueConverter.parse_numeric(value)
+        self.memory[self.next_data_address] = parsed_value
         self.data[name] = self.next_data_address
         self.next_data_address += 1
-
+        
     def get_value(self, name: str, index: int = None) -> int:
         if name not in self.data:
             raise MemoryError(f"Variable no definida: {name}")
