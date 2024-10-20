@@ -19,13 +19,18 @@ class InstructionProcessor:
 
         if instruction_name in ['JMP', 'JEQ', 'JNE', 'JGT', 'JGE', 'JLT', 'JLE', 'JCR']:
             if len(instruction_params) != 1:
-                raise InvalidOperandError(f"Instrucción de salto '{instruction_name}' requiere exactamente una etiqueta")
-            label = instruction_params[0]
-            if label in labels:
-                jump_address = labels[label]
+                raise InvalidOperandError(f"Instrucción de salto '{instruction_name}' requiere exactamente un operando")
+            jump_target = instruction_params[0]
+            
+            # Determinar si el operando es una etiqueta o un literal
+            if jump_target in labels:
+                jump_address = labels[jump_target]
+            elif ValueConverter.is_numeric(jump_target):
+                jump_address = ValueConverter.parse_numeric(jump_target)
             else:
                 # Si la etiqueta no está resuelta, usamos un valor temporal
                 jump_address = 0xFFF  # Usamos el máximo valor de 12 bits
+            
             # Aseguramos que el opcode tenga la longitud correcta
             binary = binary.ljust(self.config.word_length - self.config.lit_params['bits'], '0')
             binary += format(jump_address, f'0{self.config.lit_params["bits"]}b')

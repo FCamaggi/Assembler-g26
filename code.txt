@@ -5,5 +5,7 @@ CODE:
 MOV A,5
 MOV (0),A
 MOV B,(d)
+NOP
 CMP A,B
-JEQ 2
+JEQ end
+end:
