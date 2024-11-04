@@ -7,19 +7,15 @@ from components.valueConverter import ValueConverter
 class InstructionProcessor:
     def __init__(self, config: Configuration):
         self.config = config
-        # Instrucciones que pueden tener un solo operando
         self.single_operand_instructions = {
             'INC', 'DEC', 'PUSH'
         }
-        # Instrucciones que pueden tener uno o dos operandos
         self.flexible_operand_instructions = {
             'NOT', 'SHL', 'SHR'
         }
-        # Instrucciones sin operandos
         self.no_operand_instructions = {
             'NOP', 'RET1', 'RET2'
         }
-        # Instrucciones de salto
         self.jump_instructions = {
             'JMP', 'JEQ', 'JNE', 'JGT', 'JGE', 
             'JLT', 'JLE', 'JCR', 'CALL'
@@ -61,44 +57,65 @@ class InstructionProcessor:
         
         return instruction_name, operands
 
-    
+    def _parse_numeric_value(self, value: str) -> int:
+        """Procesa un valor numérico en cualquier formato soportado."""
+        value = value.strip()
+        try:
+            if value.endswith('h'):
+                return int(value[:-1], 16)
+            elif value.endswith('b'):
+                return int(value[:-1], 2)
+            elif value.endswith('d'):
+                return int(value[:-1])
+            return int(value)
+        except ValueError:
+            raise InvalidOperandError(f"Valor numérico inválido: {value}")
+
+    def _process_memory_reference(self, operand: str, data: Dict[str, int], memory: Memory) -> str:
+        """Procesa referencias a memoria, manejando variables, direcciones directas y hexadecimales."""
+        if operand.startswith('(') and operand.endswith(')'):
+            inner = operand[1:-1].strip()
+            
+            # Si es una variable definida en DATA
+            if inner in data:
+                return format(memory.get_address(inner), f'0{self.config.lit_params["bits"]}b')
+            
+            # Si es un registro A o B
+            if inner in ['A', 'B']:
+                return '0' * self.config.lit_params['bits']
+            
+            # Si es un número (decimal, hexadecimal o binario)
+            try:
+                address = self._parse_numeric_value(inner)
+                return format(address, f'0{self.config.lit_params["bits"]}b')
+            except InvalidOperandError:
+                raise InvalidOperandError(f"Referencia a memoria inválida: {operand}")
+                
+        return '0' * self.config.lit_params['bits']
+
     def get_opcode(self, instruction: str, labels: Dict[str, int], data: Dict[str, int], memory: Memory, instruction_address: int) -> Union[str, List[str]]:
         instruction_name, operands = self._parse_instruction(instruction)
 
-        # Manejo especial para POP
+        # Manejo de instrucciones especiales (POP y RET)
         if instruction_name == 'POP':
-            if len(operands) != 1:
+            if len(operands) != 1 or operands[0] not in ['A', 'B']:
                 raise InvalidOperandError("POP requiere exactamente un operando (A o B)")
-            if operands[0] not in ['A', 'B']:
-                raise InvalidOperandError("POP solo acepta A o B como operando")
-            
-            # Primera instrucción (POP1)
             binary1 = self.config.instructions['POP1']['opcode']
-            param_binary = ValueConverter.param_to_binary(operands[0], self.config.types, self.config.types_params)
-            binary1 += param_binary.ljust(self.config.types_params['bits'], '0')
-            binary1 = binary1.ljust(self.config.word_length, '0')
-            
-            # Segunda instrucción (POP2)
             binary2 = self.config.instructions['POP2']['opcode']
             param_binary = ValueConverter.param_to_binary(operands[0], self.config.types, self.config.types_params)
-            binary2 += param_binary.ljust(self.config.types_params['bits'], '0')
-            binary2 = binary2.ljust(self.config.word_length, '0')
-            
-            return [binary1, binary2]
+            return [
+                binary1 + param_binary.ljust(self.config.types_params['bits'], '0') + '0' * self.config.lit_params['bits'],
+                binary2 + param_binary.ljust(self.config.types_params['bits'], '0') + '0' * self.config.lit_params['bits']
+            ]
 
-        # Manejo especial para RET
         if instruction_name == 'RET':
             if operands:
                 raise InvalidOperandError("RET no debe tener operandos")
-            
-            # Primera instrucción (RET1)
-            binary1 = self.config.instructions['RET1']['opcode'].ljust(self.config.word_length, '0')
-            
-            # Segunda instrucción (RET2)
-            binary2 = self.config.instructions['RET2']['opcode'].ljust(self.config.word_length, '0')
-            
-            return [binary1, binary2]
-        
+            return [
+                self.config.instructions['RET1']['opcode'].ljust(self.config.word_length, '0'),
+                self.config.instructions['RET2']['opcode'].ljust(self.config.word_length, '0')
+            ]
+
         if instruction_name not in self.config.instructions:
             raise InvalidInstructionError(f"Instrucción desconocida: {instruction_name}")
 
@@ -117,83 +134,64 @@ class InstructionProcessor:
                 jump_address = labels[jump_target]
             else:
                 try:
-                    jump_address = ValueConverter.parse_numeric(jump_target)
-                except ValueError:
+                    jump_address = self._parse_numeric_value(jump_target)
+                except InvalidOperandError:
                     raise InvalidOperandError(f"Operando de salto inválido: {jump_target}")
             return binary + '0' * self.config.types_params['bits'] + format(jump_address, f'0{self.config.lit_params["bits"]}b')
-        
-        # Instrucciones flexibles (NOT, SHL, SHR)
+
+        # Preparar parámetros binarios
+        param_binary = ''
+        literal_value = '0' * self.config.lit_params['bits']
+
+        # Manejar instrucciones flexibles (NOT, SHL, SHR)
         if instruction_name in self.flexible_operand_instructions:
             if len(operands) == 1:
                 # Formato de un operando
-                param_type = ValueConverter.get_type(operands[0], self.config.types)
-                param_binary = ValueConverter.param_to_binary(operands[0], self.config.types, self.config.types_params)
-                return binary + param_binary.ljust(self.config.types_params['bits'], '0') + '0' * self.config.lit_params['bits']
-            elif len(operands) == 2:
+                operand = operands[0]
+                param_binary = ValueConverter.param_to_binary(operand, self.config.types, self.config.types_params)
+                param_binary = param_binary.ljust(self.config.types_params['bits'], '0')
+                if operand.startswith('('):
+                    literal_value = self._process_memory_reference(operand, data, memory)
+            else:
                 # Formato de dos operandos
                 dest, source = operands
                 param_binary = ''
                 param_binary += ValueConverter.param_to_binary(dest, self.config.types, self.config.types_params)[:3]
                 param_binary += ValueConverter.param_to_binary(source, self.config.types, self.config.types_params)[:3]
-                
-                # Manejar literales y direcciones para el destino si es necesario
-                literal_value = '0' * self.config.lit_params['bits']
-                if dest.startswith('(') and dest.endswith(')'):
-                    var_name = dest[1:-1]
-                    if var_name in data:
-                        literal_value = format(memory.get_address(var_name), f'0{self.config.lit_params["bits"]}b')
-                    elif ValueConverter.is_numeric(var_name):
-                        address = ValueConverter.parse_numeric(var_name)
-                        literal_value = format(address, f'0{self.config.lit_params["bits"]}b')
-                
-                return binary + param_binary.ljust(self.config.types_params['bits'], '0') + literal_value
-            else:
-                raise InvalidOperandError(f"Instrucción {instruction_name} requiere uno o dos operandos")
+                param_binary = param_binary.ljust(self.config.types_params['bits'], '0')
+                if dest.startswith('('):
+                    literal_value = self._process_memory_reference(dest, data, memory)
+            return binary + param_binary + literal_value
 
         # Instrucciones de un solo operando
         if instruction_name in self.single_operand_instructions:
             if len(operands) != 1:
                 raise InvalidOperandError(f"Instrucción {instruction_name} requiere un operando")
             
-            param_type = ValueConverter.get_type(operands[0], self.config.types)
-            param_binary = ValueConverter.param_to_binary(operands[0], self.config.types, self.config.types_params)
+            operand = operands[0]
+            param_binary = ValueConverter.param_to_binary(operand, self.config.types, self.config.types_params)
+            param_binary = param_binary.ljust(self.config.types_params['bits'], '0')
             
-            literal_value = '0' * self.config.lit_params['bits']
-            if operands[0].startswith('('):
-                inner = operands[0][1:-1]
-                if inner in data:
-                    literal_value = format(memory.get_address(inner), f'0{self.config.lit_params["bits"]}b')
-                elif ValueConverter.is_numeric(inner):
-                    address = ValueConverter.parse_numeric(inner)
-                    literal_value = format(address, f'0{self.config.lit_params["bits"]}b')
-            
-            return binary + param_binary.ljust(self.config.types_params['bits'], '0') + literal_value
+            if operand.startswith('('):
+                literal_value = self._process_memory_reference(operand, data, memory)
+            return binary + param_binary + literal_value
 
         # Instrucciones con dos operandos
         if len(operands) != 2:
             raise InvalidOperandError(f"Instrucción {instruction_name} requiere dos operandos")
 
-        dest, source = operands
-        dest_type = ValueConverter.get_type(dest, self.config.types)
-        source_type = ValueConverter.get_type(source, self.config.types)
-
-        param_binary = ''
-        param_binary += ValueConverter.param_to_binary(dest, self.config.types, self.config.types_params)[:3]
-        param_binary += ValueConverter.param_to_binary(source, self.config.types, self.config.types_params)[:3]
+        # Procesar primer operando
+        param_binary += ValueConverter.param_to_binary(operands[0], self.config.types, self.config.types_params)[:3]
+        
+        # Procesar segundo operando
+        param_binary += ValueConverter.param_to_binary(operands[1], self.config.types, self.config.types_params)[:3]
         param_binary = param_binary.ljust(self.config.types_params['bits'], '0')
 
-        literal_value = '0' * self.config.lit_params['bits']
-        
-        if source_type == 'lit':
-            literal_value = ValueConverter.literal_or_direct_value(source, self.config.types, self.config.lit_params, labels, data, memory, instruction_address)
-        elif source in data:
-            literal_value = format(memory.get_address(source), f'0{self.config.lit_params["bits"]}b')
-        elif source.startswith('(') and source.endswith(')'):
-            var_name = source[1:-1]
-            if var_name in data:
-                literal_value = format(memory.get_address(var_name), f'0{self.config.lit_params["bits"]}b')
-            elif ValueConverter.is_numeric(var_name):
-                address = ValueConverter.parse_numeric(var_name)
-                literal_value = format(address, f'0{self.config.lit_params["bits"]}b')
+        # Manejar literales y referencias a memoria
+        if operands[1].startswith('('):
+            literal_value = self._process_memory_reference(operands[1], data, memory)
+        elif ValueConverter.is_numeric(operands[1]):
+            value = self._parse_numeric_value(operands[1])
+            literal_value = format(value, f'0{self.config.lit_params["bits"]}b')
 
         return binary + param_binary + literal_value
