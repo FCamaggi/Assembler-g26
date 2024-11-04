@@ -9,7 +9,6 @@
       "bits": 6,
       "max": 63
     },
-
     "literals": {
       "bits": 24,
       "max": 4095
@@ -30,19 +29,47 @@
     },
     "ADD": {
       "opcode": "000010",
-      "formato": ["REG, REG", "REG, Lit", "REG, (Dir)", "(Dir)", "REG, (REG)"]
+      "formato": [
+        "REG, REG",
+        "REG, Lit",
+        "REG, (Dir)",
+        "(Dir)",
+        "REG, (REG)",
+        "(REG), REG"
+      ]
     },
     "SUB": {
       "opcode": "000011",
-      "formato": ["REG, REG", "REG, Lit", "REG, (Dir)", "(Dir)", "REG, (REG)"]
+      "formato": [
+        "REG, REG",
+        "REG, Lit",
+        "REG, (Dir)",
+        "(Dir)",
+        "REG, (REG)",
+        "(REG), REG"
+      ]
     },
     "AND": {
       "opcode": "000111",
-      "formato": ["REG, REG", "REG, Lit", "REG, (Dir)", "(Dir)", "REG, (REG)"]
+      "formato": [
+        "REG, REG",
+        "REG, Lit",
+        "REG, (Dir)",
+        "(Dir)",
+        "REG, (REG)",
+        "(REG), REG"
+      ]
     },
     "OR": {
       "opcode": "001000",
-      "formato": ["REG, REG", "REG, Lit", "REG, (Dir)", "(Dir)", "REG, (REG)"]
+      "formato": [
+        "REG, REG",
+        "REG, Lit",
+        "REG, (Dir)",
+        "(Dir)",
+        "REG, (REG)",
+        "(REG), REG"
+      ]
     },
     "XOR": {
       "opcode": "001001",
@@ -131,6 +158,14 @@
     "RET2": {
       "opcode": "011101",
       "formato": []
+    },
+    "RET": {
+      "opcode": "011110",
+      "formato": []
+    },
+    "POP": {
+      "opcode": "011111",
+      "formato": ["REG"]
     }
   },
   "tipos": {
