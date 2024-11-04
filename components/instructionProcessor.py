@@ -20,6 +20,9 @@ class InstructionProcessor:
             'JMP', 'JEQ', 'JNE', 'JGT', 'JGE', 
             'JLT', 'JLE', 'JCR', 'CALL'
         }
+        self.implicit_literal_one = {
+            'INC', 'DEC'
+        }
 
     def _parse_instruction(self, instruction: str) -> Tuple[str, List[str]]:
         parts = instruction.split(maxsplit=1)
@@ -56,6 +59,7 @@ class InstructionProcessor:
         operands = [op.strip() for op in operands if op.strip()]
         
         return instruction_name, operands
+
 
     def _parse_numeric_value(self, value: str) -> int:
         """Procesa un valor numérico en cualquier formato soportado."""
@@ -142,6 +146,24 @@ class InstructionProcessor:
         # Preparar parámetros binarios
         param_binary = ''
         literal_value = '0' * self.config.lit_params['bits']
+
+        # Instrucciones con literal implícito 1 (INC, DEC)
+        if instruction_name in self.implicit_literal_one:
+            if len(operands) != 1:
+                raise InvalidOperandError(f"Instrucción {instruction_name} requiere un operando")
+            
+            operand = operands[0]
+            param_binary = ValueConverter.param_to_binary(operand, self.config.types, self.config.types_params)
+            param_binary = param_binary.ljust(self.config.types_params['bits'], '0')
+            
+            if operand.startswith('('):
+                literal_value = self._process_memory_reference(operand, data, memory)
+            
+            # Agregar literal 1 implícito
+            literal_value = format(1, f'0{self.config.lit_params["bits"]}b')
+            
+            return binary + param_binary + literal_value
+
 
         # Manejar instrucciones flexibles (NOT, SHL, SHR)
         if instruction_name in self.flexible_operand_instructions:
