@@ -8,7 +8,7 @@ class InstructionProcessor:
     def __init__(self, config: Configuration):
         self.config = config
         self.single_operand_instructions = {
-            'INC', 'DEC', 'PUSH'
+            'PUSH'  # INC y DEC se manejan por separado
         }
         self.flexible_operand_instructions = {
             'NOT', 'SHL', 'SHR'
@@ -20,9 +20,9 @@ class InstructionProcessor:
             'JMP', 'JEQ', 'JNE', 'JGT', 'JGE', 
             'JLT', 'JLE', 'JCR', 'CALL'
         }
-        self.implicit_literal_one = {
-            'INC', 'DEC'
-        }
+        # Definir operandos válidos para INC y DEC
+        self.inc_valid_operands = {'A', 'B', '(Dir)', '(B)'}
+        self.dec_valid_operands = {'A'}
 
     def _parse_instruction(self, instruction: str) -> Tuple[str, List[str]]:
         parts = instruction.split(maxsplit=1)
@@ -76,7 +76,7 @@ class InstructionProcessor:
             raise InvalidOperandError(f"Valor numérico inválido: {value}")
 
     def _process_memory_reference(self, operand: str, data: Dict[str, int], memory: Memory) -> str:
-        """Procesa referencias a memoria, manejando variables, direcciones directas y hexadecimales."""
+        """Procesa referencias a memoria, manejando variables y direcciones directas."""
         if operand.startswith('(') and operand.endswith(')'):
             inner = operand[1:-1].strip()
             
@@ -96,6 +96,24 @@ class InstructionProcessor:
                 raise InvalidOperandError(f"Referencia a memoria inválida: {operand}")
                 
         return '0' * self.config.lit_params['bits']
+
+    def _validate_inc_dec_operand(self, instruction_name: str, operand: str) -> None:
+        """Valida que el operando sea válido para INC/DEC según las especificaciones."""
+        if instruction_name == 'INC':
+            # Para INC, validar que el operando sea A, B, (Dir) o (B)
+            if operand not in ['A', 'B'] and not (
+                operand.startswith('(') and operand.endswith(')') and (
+                    operand[1:-1] == 'B' or 
+                    operand[1:-1].isdigit() or 
+                    operand[1:-1].endswith('h') or 
+                    operand[1:-1].endswith('b')
+                )
+            ):
+                raise InvalidOperandError(f"Operando inválido para INC: {operand}")
+        elif instruction_name == 'DEC':
+            # Para DEC, solo permitir el operando A
+            if operand != 'A':
+                raise InvalidOperandError("DEC solo acepta el operando A")
 
     def get_opcode(self, instruction: str, labels: Dict[str, int], data: Dict[str, int], memory: Memory, instruction_address: int) -> Union[str, List[str]]:
         instruction_name, operands = self._parse_instruction(instruction)
@@ -125,6 +143,27 @@ class InstructionProcessor:
 
         binary = self.config.instructions[instruction_name]['opcode']
 
+        # Manejar INC y DEC específicamente
+        if instruction_name in ['INC', 'DEC']:
+            if len(operands) != 1:
+                raise InvalidOperandError(f"{instruction_name} requiere exactamente un operando")
+            
+            self._validate_inc_dec_operand(instruction_name, operands[0])
+            
+            param_binary = ValueConverter.param_to_binary(operands[0], self.config.types, self.config.types_params)
+            param_binary = param_binary.ljust(self.config.types_params['bits'], '0')
+            
+            # Literal 1 solo para INC A y DEC A
+            if operands[0] == 'A':
+                literal_value = format(1, f'0{self.config.lit_params["bits"]}b')
+            else:
+                if operands[0].startswith('('):
+                    literal_value = self._process_memory_reference(operands[0], data, memory)
+                else:
+                    literal_value = '0' * self.config.lit_params['bits']
+            
+            return binary + param_binary + literal_value
+
         # Instrucciones sin operandos
         if instruction_name in self.no_operand_instructions:
             return binary.ljust(self.config.word_length, '0')
@@ -147,25 +186,7 @@ class InstructionProcessor:
         param_binary = ''
         literal_value = '0' * self.config.lit_params['bits']
 
-        # Instrucciones con literal implícito 1 (INC, DEC)
-        if instruction_name in self.implicit_literal_one:
-            if len(operands) != 1:
-                raise InvalidOperandError(f"Instrucción {instruction_name} requiere un operando")
-            
-            operand = operands[0]
-            param_binary = ValueConverter.param_to_binary(operand, self.config.types, self.config.types_params)
-            param_binary = param_binary.ljust(self.config.types_params['bits'], '0')
-            
-            if operand.startswith('('):
-                literal_value = self._process_memory_reference(operand, data, memory)
-            
-            # Agregar literal 1 implícito
-            literal_value = format(1, f'0{self.config.lit_params["bits"]}b')
-            
-            return binary + param_binary + literal_value
-
-
-        # Manejar instrucciones flexibles (NOT, SHL, SHR)
+        # Instrucciones con formato flexible
         if instruction_name in self.flexible_operand_instructions:
             if len(operands) == 1:
                 # Formato de un operando
