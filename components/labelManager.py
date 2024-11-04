@@ -5,6 +5,8 @@ class LabelManager:
     def __init__(self):
         self.labels = {}
         self.unresolved_labels = {}
+        # Instrucciones que generan dos instrucciones máquina
+        self.double_instructions = {'POP', 'RET'}
 
     def add_label(self, name: str, address: int) -> None:
         if name in self.labels:
@@ -34,17 +36,42 @@ class LabelManager:
 
     def calculate_label_positions(self, code_lines: List[Tuple[str, int]]) -> None:
         """
-        Recalcula las posiciones de las etiquetas teniendo en cuenta instrucciones especiales.
+        Recalcula las posiciones de las etiquetas considerando instrucciones que generan
+        múltiples instrucciones máquina.
         """
-        current_position = 0
-        for line, line_number in code_lines:
+        position_counter = 0
+        binary_position = 0  # Posición real en el código binario
+
+        # Primera pasada: calcular posiciones de etiquetas
+        for line, _ in code_lines:
             if line.endswith(':'):  # Es una etiqueta
-                self.labels[line[:-1]] = current_position
+                label_name = line[:-1]
+                self.labels[label_name] = binary_position
             elif line not in ['DATA:', 'CODE:']:
+                instruction_name = line.split()[0]
+                # Incrementar contador según el tipo de instrucción
+                if instruction_name in self.double_instructions:
+                    binary_position += 2
+                else:
+                    binary_position += 1
+            position_counter += 1
+
+        # Segunda pasada: procesar referencias a etiquetas
+        binary_position = 0
+        for line, _ in code_lines:
+            if not line.endswith(':') and line not in ['DATA:', 'CODE:']:
                 instruction_parts = line.split()
                 instruction_name = instruction_parts[0]
-                # Verificar si es una instrucción que genera dos instrucciones máquina
-                if instruction_name in ['POP', 'RET']:
-                    current_position += 2
+                
+                # Procesar instrucciones de salto
+                if instruction_name in ['JMP', 'JEQ', 'JNE', 'JGT', 'JGE', 'JLT', 'JLE', 'JCR', 'CALL']:
+                    if len(instruction_parts) > 1:
+                        label_name = instruction_parts[1]
+                        if label_name in self.labels:
+                            self.add_unresolved_label(label_name, binary_position)
+                
+                # Actualizar posición según el tipo de instrucción
+                if instruction_name in self.double_instructions:
+                    binary_position += 2
                 else:
-                    current_position += 1
+                    binary_position += 1

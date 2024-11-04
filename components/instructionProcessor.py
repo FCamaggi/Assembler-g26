@@ -121,7 +121,7 @@ class InstructionProcessor:
                 except ValueError:
                     raise InvalidOperandError(f"Operando de salto inválido: {jump_target}")
             return binary + '0' * self.config.types_params['bits'] + format(jump_address, f'0{self.config.lit_params["bits"]}b')
-
+        
         # Instrucciones flexibles (NOT, SHL, SHR)
         if instruction_name in self.flexible_operand_instructions:
             if len(operands) == 1:

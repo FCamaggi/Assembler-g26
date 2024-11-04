@@ -11,10 +11,10 @@ class BinaryGenerator:
         self.memory = memory
         self.config = config
         self.verbose = verbose
+        self.special_instructions = {'POP', 'RET'}
 
     def _format_binary_parts(self, binary: str, original_instruction: str) -> str:
         """Formatea una instrucción binaria en partes legibles."""
-        # Extraer las partes según la configuración
         opcode = binary[:self.config.instruction_params['bits']]
         params = binary[self.config.instruction_params['bits']:
                        self.config.instruction_params['bits'] + self.config.types_params['bits']]
@@ -22,18 +22,15 @@ class BinaryGenerator:
         param2 = params[3:6]
         literal = binary[-self.config.lit_params['bits']:]
 
-        # Convertir los parámetros a sus nombres
         param1_name = self.config.types_inverse.get(param1, 'None')
         param2_name = self.config.types_inverse.get(param2, 'None')
 
-        # Encontrar el nombre de la instrucción
         instruction_name = next(
             (name for name, info in self.config.instructions.items() 
              if info['opcode'] == opcode), 
             'None'
         )
 
-        # Construir la representación formateada
         formatted = (
             f"Instrucción: {original_instruction}\n"
             f"  [opcode: {opcode}] ({instruction_name})\n"
@@ -49,46 +46,72 @@ class BinaryGenerator:
         current_position = 0
         instruction_positions = {}
         
-        for i, instruction in enumerate(instructions):
-            if not (instruction.endswith(':') or 
-                   instruction in ['DATA:', 'CODE:']):
-                
-                result = self.instruction_processor.get_opcode(
-                    instruction,
-                    self.label_manager.labels,
-                    self.memory.data,
-                    self.memory,
-                    current_position
-                )
-                
-                if isinstance(result, list):
-                    instruction_positions[current_position] = len(binary)
-                    binary.extend(result)
-                    current_position += 1
-                    if self.verbose:
-                        print(f"\nInstrucción {len(binary)-2} (parte 1 de 2):")
-                        print(self._format_binary_parts(result[0], f"{instruction} (parte 1)"))
-                        print(f"\nInstrucción {len(binary)-1} (parte 2 de 2):")
-                        print(self._format_binary_parts(result[1], f"{instruction} (parte 2)"))
-                else:
-                    instruction_positions[current_position] = len(binary)
-                    binary.append(result)
-                    current_position += 1
-                    if self.verbose:
-                        print(f"\nInstrucción {len(binary)-1}:")
-                        print(self._format_binary_parts(result, instruction))
-
-        # Resolver etiquetas
-        unresolved = self.label_manager.resolve_labels()
-        for original_pos, target_label_pos in unresolved.items():
-            binary_pos = instruction_positions[original_pos]
-            instruction_prefix = binary[binary_pos][:self.config.word_length - self.config.lit_params['bits']]
-            binary[binary_pos] = instruction_prefix + format(target_label_pos, f'0{self.config.lit_params["bits"]}b')
+        # Primera pasada: generar código binario inicial
+        for instruction in instructions:
+            if instruction.endswith(':'):
+                # Es una etiqueta, registrar su posición en el código binario
+                label_name = instruction[:-1]
+                self.label_manager.labels[label_name] = len(binary)
+                continue
             
-            if self.verbose:
-                print(f"\nActualizando salto en posición {binary_pos}:")
-                print(self._format_binary_parts(binary[binary_pos], instructions[original_pos]))
-                print(f"  Dirección de salto actualizada a: {target_label_pos}")
+            if instruction in ['DATA:', 'CODE:']:
+                continue
+
+            result = self.instruction_processor.get_opcode(
+                instruction,
+                self.label_manager.labels,
+                self.memory.data,
+                self.memory,
+                current_position
+            )
+            
+            instruction_positions[current_position] = len(binary)
+            
+            if isinstance(result, list):
+                binary.extend(result)
+                current_position += 2  # Instrucciones especiales ocupan dos posiciones
+                if self.verbose:
+                    print(f"\nInstrucción {len(binary)-2} (parte 1 de 2):")
+                    print(self._format_binary_parts(result[0], f"{instruction} (parte 1)"))
+                    print(f"\nInstrucción {len(binary)-1} (parte 2 de 2):")
+                    print(self._format_binary_parts(result[1], f"{instruction} (parte 2)"))
+            else:
+                binary.append(result)
+                current_position += 1
+                if self.verbose:
+                    print(f"\nInstrucción {len(binary)-1}:")
+                    print(self._format_binary_parts(result, instruction))
+
+        # Segunda pasada: resolver referencias a etiquetas
+        for i, instruction in enumerate(binary):
+            if instruction.startswith(self.config.instructions['JMP']['opcode']) or \
+               instruction.startswith(self.config.instructions['JEQ']['opcode']) or \
+               instruction.startswith(self.config.instructions['JNE']['opcode']) or \
+               instruction.startswith(self.config.instructions['JGT']['opcode']) or \
+               instruction.startswith(self.config.instructions['JGE']['opcode']) or \
+               instruction.startswith(self.config.instructions['JLT']['opcode']) or \
+               instruction.startswith(self.config.instructions['JLE']['opcode']) or \
+               instruction.startswith(self.config.instructions['JCR']['opcode']) or \
+               instruction.startswith(self.config.instructions['CALL']['opcode']):
+                
+                # Extraer la dirección actual
+                current_literal = int(instruction[-self.config.lit_params['bits']:], 2)
+                
+                # Si es un salto hacia atrás (a una etiqueta anterior)
+                if current_literal in self.label_manager.labels.values():
+                    # Mantener la dirección tal cual está
+                    continue
+                    
+                # Si es un salto hacia adelante o un salto a sí mismo
+                instruction_prefix = instruction[:self.config.word_length - self.config.lit_params['bits']]
+                if current_literal == i:  # Salto a sí mismo
+                    binary[i] = instruction_prefix + format(i, f'0{self.config.lit_params["bits"]}b')
+                else:
+                    # Buscar la etiqueta correspondiente
+                    for label, pos in self.label_manager.labels.items():
+                        if pos == current_literal:
+                            binary[i] = instruction_prefix + format(pos, f'0{self.config.lit_params["bits"]}b')
+                            break
 
         return binary
 
