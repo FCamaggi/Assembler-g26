@@ -1,0 +1,3 @@
+CODE:
+MOV A,170
+MOV B,17

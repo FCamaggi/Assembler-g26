@@ -1,0 +1,410 @@
+DATA:
+
+t 234
+i 0
+t0 0
+
+CODE:
+
+JMP _A
+
+//////////////////////////////////////////////////////////////////////////
+mal:            // Resultados                                           //
+ MOV A,(t)                                                              //
+ MOV B,(i)                                                              //
+ JMP null                                                               //
+                                                                        //
+bien:                                                                   //
+ MOV A,170                                                              //
+ MOV B,17                                                               //
+ JMP null                                                               //
+                                                                        //
+null:                                                                   //
+ JMP null                                                               //
+//////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////
+_A:             // Seccion  : Punteros                                  //
+MOV A,0                                                                 //
+MOV B,0                                                                 //
+JMP A0                                                                  //
+//////////////////////////////////////////////////////////////////////////
+
+A0:
+ MOV A,t0
+ CMP A,2
+ JEQ A1
+ JMP mal
+
+A1:
+ INC (i)
+ MOV B,t0
+ CMP A,B
+ JEQ A2
+ JMP mal
+
+A2:
+ INC (i)
+ MOV B,0
+ MOV A,1
+ ADD A,t0
+ CMP A,3
+ JEQ A3
+ JMP mal
+
+A3:
+ INC (i)
+ ADD B,t0
+ MOV A,B
+ CMP A,5
+ JEQ A4
+ JMP mal
+
+A4:
+ INC (i)
+ SUB A,t0
+ CMP A,3
+ JEQ A5
+ JMP mal
+
+A5:
+ INC (i)
+ SUB B,t0
+ MOV A,B
+ CMP A,1
+ JEQ A6
+ JMP mal
+
+A6:
+ INC (i)
+ MOV A,6
+ AND A,t0
+ CMP A,2
+ JEQ A7
+ JMP mal
+
+A7:
+ INC (i)
+ MOV A,3
+ AND B,t0
+ MOV A,B
+ CMP A,2
+ JEQ A8
+ JMP mal
+
+A8:
+ INC (i)
+ MOV A,1
+ OR A,t0
+ CMP A,3
+ JEQ A9
+ JMP mal
+
+A9:
+ INC (i)
+ MOV A,1
+ OR B,t0
+ MOV A,B
+ CMP A,3
+ JEQ A10
+ JMP mal
+
+A10:
+ INC (i)
+ XOR A,t0
+ CMP A,1
+ JEQ A11
+ JMP mal
+
+A11:
+ INC (i)
+ MOV A,5
+ XOR B,t0
+ MOV A,B
+ CMP A,7
+ JEQ A12
+ JMP mal
+
+A12:
+ INC (i)
+ MOV A,2
+ CMP A,t0
+ JEQ A13
+ JMP mal
+
+A13:
+ JMP A_fin
+
+A_fin:
+ JMP _B
+
+//////////////////////////////////////////////////////////////////////////
+_B:             // Seccion : Indirecto                                  //
+MOV A,235                                                               //
+MOV (t),A                                                               //
+MOV A,0                                                                 //
+MOV (i),A                                                               //
+MOV B,0                                                                 //
+JMP B0                                                                  //
+//////////////////////////////////////////////////////////////////////////
+
+B0:
+ MOV A,5
+ MOV (t0),A
+ MOV B,t0
+ CMP A,(B)
+ JEQ B1
+ JMP mal
+
+B1:
+ INC (i)
+ MOV A,7
+ MOV (B),A
+ CMP A,(B)
+ JEQ B2
+ JMP mal
+
+B2:
+ INC (i)
+ MOV (B),3
+ MOV A,3
+ CMP A,(B)
+ JEQ B3
+ JMP mal
+
+B3:
+ INC (i)
+ MOV (B),t0
+ MOV A,B
+ CMP A,(B)
+ JEQ B4
+ JMP mal
+
+B4:
+ INC (i)
+ MOV (B),5
+ MOV A,(B)
+ CMP A,(B)
+ JEQ B5
+ JMP mal
+
+B5:
+ INC (i)
+ MOV (B),6
+ MOV B,(B)
+ MOV A,B
+ CMP A,6
+ JEQ B6
+ JMP mal
+
+B6:
+ INC (i)
+ MOV B,t0
+ MOV A,4
+ ADD A,(B)
+ CMP A,10
+ JEQ B7
+ JMP mal
+
+B7:
+ INC (i)
+ ADD B,(B)
+ MOV A,B
+ CMP A,16
+ JEQ B8
+ JMP mal
+
+B8:
+ INC (i)
+ MOV B,t0
+ MOV A,16
+ SUB A,(B)
+ CMP A,10
+ JEQ B9
+ JMP mal
+
+B9:
+ INC (i)
+ SUB B,(B)
+ MOV A,B
+ CMP A,4
+ JEQ B10
+ JMP mal
+
+B10:
+ INC (i)
+ MOV B,t0
+ MOV A,5
+ AND A,(B)
+ CMP A,4
+ JEQ B11
+ JMP mal
+
+B11:
+ INC (i)
+ INC A
+ AND B,(B)
+ MOV A,B
+ CMP A,4
+ JEQ B12
+ JMP mal
+
+B12:
+ INC (i)
+ MOV B,t0
+ MOV A,5
+ OR A,(B)
+ CMP A,7
+ JEQ B13
+ JMP mal
+
+B13:
+ INC (i)
+ SUB A,2
+ OR B,(B)
+ MOV A,B
+ CMP A,7
+ JEQ B14
+ JMP mal
+
+B14:
+ INC (i)
+ MOV B,t0
+ MOV A,5
+ XOR A,(B)
+ CMP A,3
+ JEQ B15
+ JMP mal
+
+B15:
+ INC (i)
+ XOR B,(B)
+ MOV A,B
+ CMP A,5
+ JEQ B16
+ JMP mal
+
+B16:
+ INC (i)
+ NOT A
+ NOT (B),A
+ NOT A
+ CMP A,(B)
+ JEQ B17
+ JMP mal
+
+B17:
+ INC (i)
+ SHL (B),A
+ MOV A,(B)
+ CMP A,10
+ JEQ B18
+ JMP mal
+
+B18:
+ INC (i)
+ SHR (B),A
+ MOV A,(B)
+ CMP A,5
+ JEQ B19
+ JMP mal
+
+B19:
+ INC (i)
+ INC (B)
+ MOV A,(B)
+ CMP A,6
+ JEQ B20
+ JMP mal
+
+B20:
+ JMP B_fin
+
+B_fin:
+JMP _C
+
+//////////////////////////////////////////////////////////////////////////
+_C:             // Seccion : Stack                                      //
+MOV A,236                                                               //
+MOV (t),A                                                               //
+MOV A,0                                                                 //
+MOV (i),A                                                               //
+MOV B,0                                                                 //
+JMP C0                                                                  //
+//////////////////////////////////////////////////////////////////////////
+
+C0:
+ MOV A,5
+ PUSH A
+ MOV A,0
+ NOT B,A
+ MOV A,(B)
+ CMP A,5
+ JEQ C1
+ JMP mal
+
+C1:
+ INC (i)
+ MOV B,6
+ PUSH B
+ MOV A,1
+ NOT B,A
+ MOV A,(B)
+ CMP A,6
+ JEQ C2
+ JMP mal
+
+C2:
+ INC (i)
+ MOV A,0
+ POP A
+ CMP A,6
+ JEQ C3
+ JMP mal
+
+C3:
+ INC (i)
+ MOV A,0
+ POP B
+ MOV A,B
+ CMP A,5
+ JEQ C4
+ JMP mal
+
+C4:
+ INC (i)
+ CALL C4_1
+ JMP mal
+ C4_1:
+ CALL C4_2
+ C4_2:
+ POP A
+ POP B
+ SUB A,B
+ CMP A,2
+ JEQ C5
+ JMP mal
+
+C5:
+ INC (i)
+ CALL C5_1
+ JMP mal
+ JMP C5_2
+ JMP mal
+ C5_1:
+ POP A
+ INC A
+ PUSH A
+ MOV A,2
+ RET
+ JMP mal
+ C5_2:
+ CMP A,2
+ JEQ C6
+ JMP mal
+
+C6: 
+ JMP C_fin
+
+C_fin:
+ JMP bien

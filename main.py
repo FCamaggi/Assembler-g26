@@ -22,13 +22,40 @@ def program_basys(binary, port=None, verbose=False):
     rom_programmer.begin(port_number=1)
     for address, instruction in enumerate(binary):
         print(f"Programando dirección {address}: {instruction}")
-        # instruction_bytes = bytearray([int(instruction[i:i+8], 2) for i in range(0, len(instruction), 8)])
-        instruction_bytes = int(instruction, 2).to_bytes(5, "big")
-        rom_programmer.write(address, bytearray(instruction_bytes))
+
+        old_instruction_bytes = bytearray([int(instruction[i:i+8], 2) for i in range(0, len(instruction), 8)])
+        new_instruction_bytes = bytearray(int(instruction, 2).to_bytes(5, "big"))
+        tst_instruction_bytes = remove_first_4_bits(bytearray(int(instruction, 2).to_bytes(5, "big")))
+
+        rom_programmer.write(address, new_instruction_bytes)
+
+        # print("Obj bin:", instruction)
+
+        # olb_bin_repre = ''.join(format(byte, '08b') for byte in old_instruction_bytes)
+        # print(f"Old bin: {olb_bin_repre}")
+
+        # new_bin_repre = ''.join(format(byte, '08b') for byte in new_instruction_bytes)
+        # print(f"New bin: {new_bin_repre}")
+
+        # tst_bin_repre = ''.join(format(byte, '08b') for byte in tst_instruction_bytes)
+        # print(f"Tst bin: {tst_bin_repre}\n")
+
         if verbose:
             print(f"Programando dirección {address}: {instruction}")
     rom_programmer.end()
     print("Programación de la Basys3 completada.")
+
+def remove_first_4_bits(byte_array):
+    # Convert bytearray to integer
+    original_int = int.from_bytes(byte_array, byteorder='big')
+    
+    # Shift left by 4 bits
+    shifted_int = (original_int << 4) & ((1 << 36) - 1)
+    
+    # Convert back to bytearray (5 bytes for 36 bits)
+    new_byte_array = shifted_int.to_bytes(5, byteorder='big')
+    
+    return new_byte_array
 
 def main():
     args = parse_arguments()
