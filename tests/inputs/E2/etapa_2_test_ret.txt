@@ -1,0 +1,41 @@
+DATA:
+
+i 0
+j 0
+
+CODE:
+
+JMP C0
+
+//////////////////////////////////////////////////////////////////////////
+mal:            // Resultados                                           //
+ MOV A,255                                                               //
+ MOV B,255                                                              //
+ JMP null                                                               //
+                                                                        //
+bien:                                                                   //
+ MOV A,170                                                              //
+ MOV B,17                                                               //
+ JMP null                                                               //
+                                                                        //
+null:                                                                   //
+ JMP null                                                               //
+//////////////////////////////////////////////////////////////////////////
+
+
+C0:
+ MOV A,func1 
+ MOV (i),A      // i=Direccion de func1 
+ RET            // deberia saltar a func1 
+ JMP mal 
+
+
+func1:
+ MOV A,func2 
+ MOV (j),A
+ RET 
+ JMP mal 
+
+
+func2: 
+ JMP bien 
