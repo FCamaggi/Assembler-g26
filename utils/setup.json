@@ -18,86 +18,113 @@
     "MOV": {
       "opcode": "000001",
       "formato": [
-        "REG, REG",
-        "REG, Lit",
-        "REG, (Dir)",
-        "(Dir), REG",
-        "REG, (REG)",
-        "(REG), REG",
-        "(REG), Lit"
+        "A, B",
+        "B, A",
+        "A, Lit",
+        "B, Lit",
+        "A, (Dir)",
+        "B, (Dir)",
+        "(Dir), A",
+        "(Dir), B",
+        "A, (B)",
+        "B, (B)",
+        "(B), A",
+        "(B), Lit"
       ]
     },
     "ADD": {
       "opcode": "000010",
       "formato": [
-        "REG, REG",
-        "REG, Lit",
-        "REG, (Dir)",
+        "A, B",
+        "B, A",
+        "A, Lit",
+        "B, Lit",
+        "A, (Dir)",
+        "B, (Dir)",
         "(Dir)",
-        "REG, (REG)",
-        "(REG), REG"
+        "A, (B)",
+        "B, (B)"
       ]
     },
     "SUB": {
       "opcode": "000011",
       "formato": [
-        "REG, REG",
-        "REG, Lit",
-        "REG, (Dir)",
+        "A, B",
+        "B, A",
+        "A, Lit",
+        "B, Lit",
+        "A, (Dir)",
+        "B, (Dir)",
         "(Dir)",
-        "REG, (REG)",
-        "(REG), REG"
+        "A, (B)",
+        "B, (B)"
       ]
     },
     "AND": {
       "opcode": "000111",
       "formato": [
-        "REG, REG",
-        "REG, Lit",
-        "REG, (Dir)",
+        "A, B",
+        "B, A",
+        "A, Lit",
+        "B, Lit",
+        "A, (Dir)",
+        "B, (Dir)",
         "(Dir)",
-        "REG, (REG)",
-        "(REG), REG"
+        "A, (B)",
+        "B, (B)"
       ]
     },
     "OR": {
       "opcode": "001000",
       "formato": [
-        "REG, REG",
-        "REG, Lit",
-        "REG, (Dir)",
+        "A, B",
+        "B, A",
+        "A, Lit",
+        "B, Lit",
+        "A, (Dir)",
+        "B, (Dir)",
         "(Dir)",
-        "REG, (REG)",
-        "(REG), REG"
+        "A, (B)",
+        "B, (B)"
       ]
     },
     "XOR": {
       "opcode": "001001",
-      "formato": ["REG, REG", "REG, Lit", "REG, (Dir)", "(Dir)", "REG, (REG)"]
+      "formato": [
+        "A, B",
+        "B, A",
+        "A, Lit",
+        "B, Lit",
+        "A, (Dir)",
+        "B, (Dir)",
+        "(Dir)",
+        "A, (B)",
+        "B, (B)"
+      ]
     },
     "NOT": {
       "opcode": "001010",
-      "formato": ["REG", "REG, REG", "(Dir), REG", "(REG), REG"]
+      "formato": ["A", "B, A", "(Dir), A", "(B), A"]
     },
     "SHL": {
       "opcode": "001011",
-      "formato": ["REG", "REG, REG", "(Dir), REG", "(REG), REG"]
+      "formato": ["A", "B, A", "(Dir), A", "(B), A"]
     },
     "SHR": {
       "opcode": "001100",
-      "formato": ["REG", "REG, REG", "(Dir), REG", "(REG), REG"]
+      "formato": ["A", "B, A", "(Dir), A", "(B), A"]
     },
     "INC": {
       "opcode": "001101",
-      "formato": ["REG", "(Dir)", "(REG)"]
+      "formato": ["A", "B", "(Dir)", "(B)"]
     },
     "DEC": {
       "opcode": "001110",
-      "formato": ["REG"]
+      "formato": ["A"]
     },
     "CMP": {
       "opcode": "001111",
-      "formato": ["REG, REG", "REG, Lit", "REG, (Dir)", "REG, (REG)"]
+      "formato": ["A, B", "A, Lit", "A, (Dir)", "A, (B)"]
     },
     "JMP": {
       "opcode": "010000",
@@ -137,15 +164,15 @@
     },
     "PUSH": {
       "opcode": "011000",
-      "formato": ["REG"]
+      "formato": ["A", "B"]
     },
     "POP1": {
       "opcode": "011001",
-      "formato": ["REG"]
+      "formato": ["A", "B"]
     },
     "POP2": {
       "opcode": "011010",
-      "formato": ["REG"]
+      "formato": ["A", "B"]
     },
     "CALL": {
       "opcode": "011011",
@@ -158,14 +185,6 @@
     "RET2": {
       "opcode": "011101",
       "formato": []
-    },
-    "RET": {
-      "opcode": "011110",
-      "formato": []
-    },
-    "POP": {
-      "opcode": "011111",
-      "formato": ["REG"]
     }
   },
   "tipos": {

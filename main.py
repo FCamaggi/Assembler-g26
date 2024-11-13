@@ -1,6 +1,7 @@
 import argparse
 import json
 import sys
+
 from components.assembler import Assembler
 from utils.exceptions import AssemblerError
 from utils.logger import log
@@ -9,13 +10,10 @@ from iic2343 import Basys3
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Assembler para el proyecto de Arquitectura de Computadores')
     parser.add_argument('input', help='Archivo de entrada con código assembly')
-    parser.add_argument('-o', '--output', default='output.txt', help='Archivo de salida para el código de máquina (por defecto: output.txt)')
-    parser.add_argument('-s', '--setup', default='utils/setup.json', help='Archivo de configuración JSON (por defecto: utils/setup.json)')
-    parser.add_argument('-v', '--verbose', action='store_true', help='Mostrar información detallada durante el proceso')
     parser.add_argument('--debug', action='store_true', help='Activar modo de depuración')
     parser.add_argument('--program-basys', action='store_true', help='Programar la ROM de la Basys3 después del ensamblaje')
     parser.add_argument('--port', default=None, help='Puerto serial para la conexión con Basys3')
-    parser.add_argument('--load-data', action='store_true', help='Cargar datos iniciales como instrucciones')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Mostrar información detallada durante el proceso')
     return parser.parse_args()
 
 def program_basys(binary, port=None, verbose=False):
@@ -37,16 +35,16 @@ def main():
     args = parse_arguments()
 
     try:
-        with open(args.setup) as f:
+        with open('utils/setup.json') as f:
             setup = json.load(f)
     except FileNotFoundError:
-        print(f"Error: No se pudo encontrar el archivo de configuración '{args.setup}'")
+        print(f"Error: No se pudo encontrar el archivo de configuración 'utils/setup.json'")
         sys.exit(1)
     except json.JSONDecodeError:
-        print(f"Error: El archivo de configuración '{args.setup}' no es un JSON válido")
+        print(f"Error: El archivo de configuración 'utils/setup.json' no es un JSON válido")
         sys.exit(1)
 
-    assembler = Assembler(setup, verbose=args.verbose, load_data=args.load_data)
+    assembler = Assembler(setup, verbose=args.verbose)
 
     try:
         with open(args.input, 'r') as f:
@@ -58,11 +56,11 @@ def main():
         binary = assembler.assemble(program)
         
         if args.verbose:
-            print(f"Ensamblaje completado. Escribiendo salida en: {args.output}")
+            print(f"Ensamblaje completado. Escribiendo salida en: output.txt")
         
-        assembler.write(binary, args.output)
+        assembler.write(binary, 'output.txt')
         
-        print(f"Ensamblaje exitoso. Resultado guardado en {args.output}")
+        print(f"Ensamblaje exitoso. Resultado guardado en output.txt")
 
         if args.program_basys:
             program_basys(binary, args.port, args.verbose)

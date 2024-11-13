@@ -1,5 +1,155 @@
 DATA:
+// Variables simples
+var1 5d
+var2 10h        // 16 en decimal
+var3 1010b      // 10 en decimal
+var4 'A'        // 65 en decimal
+
+// Array simple
+array1 1
+2
+3
+4
+5
+
+// Array con diferentes bases
+array2 10d
+0Ah
+1010b
+'Z'
+
+// String (cada carácter se almacena como su valor ASCII + null terminator)
+mensaje "Hola"  // Se almacena como [72, 111, 108, 97, 0]
+
 CODE:
-INC A
-DEC A
-INC B
+inicio:
+    // Pruebas MOV con todos los modos de direccionamiento
+    MOV A,5              // Inmediato a registro
+    MOV B,0Ah           // Inmediato hexadecimal a registro
+    MOV A,(var1)        // Memoria directa a registro
+    MOV B,(var2)        // Memoria directa a registro
+    MOV (var3),A        // Registro a memoria directa
+    MOV (var4),B        // Registro a memoria directa
+    MOV A,B             // Registro a registro
+    MOV B,A             // Registro a registro
+    MOV A,(B)           // Memoria indirecta a registro
+    MOV B,(B)           // Memoria indirecta a registro
+    MOV (B),A           // Registro a memoria indirecta
+    MOV (B),5           // Inmediato a memoria indirecta
+
+    // Pruebas operaciones aritméticas y lógicas
+    ADD A,B             // Registro a registro
+    ADD B,A             // Registro a registro
+    ADD A,5             // Inmediato
+    ADD B,10h           // Inmediato hexadecimal
+    ADD A,(var1)        // Memoria directa
+    ADD B,(var2)        // Memoria directa
+    ADD A,(B)           // Memoria indirecta
+    ADD B,(B)           // Memoria indirecta
+    ADD (var1),A        // Resultado en memoria (corregido)
+
+
+    SUB A,B
+    SUB B,A
+    SUB A,5
+    SUB B,10h
+    SUB A,(var1)
+    SUB B,(var2)
+    SUB A,(B)
+    SUB B,(B)
+    SUB (var1)
+
+    AND A,B
+    AND B,A
+    AND A,5
+    AND B,10h
+    AND A,(var1)
+    AND B,(var2)
+    AND A,(B)
+    AND B,(B)
+    AND (var1)
+
+    OR A,B
+    OR B,A
+    OR A,5
+    OR B,10h
+    OR A,(var1)
+    OR B,(var2)
+    OR A,(B)
+    OR B,(B)
+    OR (var1)
+
+    XOR A,B
+    XOR B,A
+    XOR A,5
+    XOR B,10h
+    XOR A,(var1)
+    XOR B,(var2)
+    XOR A,(B)
+    XOR B,(B)
+    XOR (var1)
+
+    // Pruebas operaciones unarias
+    NOT A               // Un operando
+    NOT B,A             // Dos operandos
+    NOT (var1),A        // Memoria directa
+    NOT (B),A           // Memoria indirecta
+
+    SHL A
+    SHL B,A
+    SHL (var1),A
+    SHL (B),A
+
+    SHR A
+    SHR B,A
+    SHR (var1),A
+    SHR (B),A
+
+    // Pruebas INC/DEC
+    INC A
+    INC B
+    INC (var1)
+    INC (B)
+    DEC A
+
+    // Pruebas de comparación
+    CMP A,B
+    CMP A,5
+    CMP A,(var1)
+    CMP A,(B)
+
+    // Pruebas de saltos
+test_jumps:
+    JMP salto1
+salto1:
+    JEQ salto2
+salto2:
+    JNE salto3
+salto3:
+    JGT salto4
+salto4:
+    JGE salto5
+salto5:
+    JLT salto6
+salto6:
+    JLE salto7
+salto7:
+    JCR salto8
+salto8:
+
+    // Pruebas de pila y subrutinas
+    PUSH A
+    PUSH B
+    POP A
+    POP B
+    
+    CALL subrutina
+    JMP final
+
+subrutina:
+    MOV A,1
+    RET
+
+final:
+    NOP
+    JMP final
