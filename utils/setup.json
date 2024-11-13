@@ -1,6 +1,6 @@
 {
   "config": {
-    "tamañoPalabra": 36,
+    "tamanoPalabra": 36,
     "instrucciones": {
       "bits": 6,
       "max": 63

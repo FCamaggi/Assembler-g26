@@ -14,7 +14,7 @@ class EnhancedInterpreter:
 
         for i, line in enumerate(lines):
             binary = line.strip()
-            if len(binary) != self.config['tamañoPalabra']:
+            if len(binary) != self.config['tamanoPalabra']:
                 print(f"Error: La línea {i+1} no tiene la longitud correcta.")
                 continue
 
