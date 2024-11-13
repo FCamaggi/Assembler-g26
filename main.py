@@ -17,19 +17,18 @@ def parse_arguments():
     return parser.parse_args()
 
 def program_basys(binary, port=None, verbose=False):
+    print("Iniciando programación de la Basys3...")
     rom_programmer = Basys3()
-    if verbose:
-        print("Iniciando programación de la Basys3...")
     rom_programmer.begin(port_number=1)
     for address, instruction in enumerate(binary):
-        # Convertir la instrucción binaria a bytes
-        instruction_bytes = bytearray([int(instruction[i:i+8], 2) for i in range(0, len(instruction), 8)])
-        rom_programmer.write(address, instruction_bytes)
+        print(f"Programando dirección {address}: {instruction}")
+        # instruction_bytes = bytearray([int(instruction[i:i+8], 2) for i in range(0, len(instruction), 8)])
+        instruction_bytes = int(instruction, 2).to_bytes(5, "big")
+        rom_programmer.write(address, bytearray(instruction_bytes))
         if verbose:
             print(f"Programando dirección {address}: {instruction}")
     rom_programmer.end()
-    if verbose:
-        print("Programación de la Basys3 completada.")
+    print("Programación de la Basys3 completada.")
 
 def main():
     args = parse_arguments()
